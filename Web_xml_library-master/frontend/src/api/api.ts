@@ -56,13 +56,15 @@ export const checkConsistency = async (structureId: number) => {
 // вот это не работает , хотя на бэке вроде норм прописан алгоритм
 export const getFolderTree = async (structureId: number) => {
   try {
-    const response = await api.get(`/structures/${structureId}/folders/`)
-    return response.data
+    const response = await api.get(`/structures/${structureId}/folders/`);
+    console.log('Полный ответ API:', response.data);
+    console.log('Поле tree:', response.data.tree);
+    return response.data.tree || [];  // возвращаем именно nested tree
   } catch (error) {
-    console.error('Error fetching folder tree:', error)
-    throw error
+    console.error('Error fetching folder tree:', error);
+    return [];
   }
-}
+};
 
 export const testAPI = async () => {
   try {
@@ -84,3 +86,14 @@ export const apiService = {
 }
 
 export default api
+
+// после ввода названия документа страница падает 
+export const search_structure = async (query: string) => {
+  try {
+    const response = await api.get(`/structures/search/?q=${encodeURIComponent(query)}`);
+    return response.data; // возвращаем что угодно, что пришло с бэка
+  } catch (error) {
+    console.error('Ошибка поиска структур:', error);
+    return []; // если ошибка — возвращаем пустой массив, чтобы не падало
+  }
+};

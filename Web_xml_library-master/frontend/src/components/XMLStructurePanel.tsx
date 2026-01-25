@@ -1,85 +1,123 @@
-import { useState } from 'react'
-import { Typography, TextField, List, ListItem, ListItemButton, ListItemText } from '@mui/material'
-import type { TreeNode, NodeDetails } from '../types/models'
-import { mockTree } from '../mock/treeData'
+import { useState, useEffect } from 'react';
+import { 
+  Typography, 
+  TextField, 
+  List,  
+  ListItemButton, 
+  ListItemText, 
+  Alert, 
+  CircularProgress 
+} from '@mui/material';
+import { getStructures } from '../api/api';
+import type { Structure } from '../types/models';
 
-export default function XMLStructurePanel() {
-  const [search, setSearch] = useState('')
-  const [selectedNode, setSelectedNode] = useState<NodeDetails | null>(null)
+interface XMLStructurePanelProps {
+  onSelectStructure?: (id: number) => void; 
+}
 
-  const filterTree = (nodes: TreeNode[]): TreeNode[] => {
-    return nodes
-      .filter((n) => n.name.toLowerCase().includes(search.toLowerCase()))
-      .map((n) => ({
-        ...n,
-        children: n.children ? filterTree(n.children) : undefined
-      }))
-  }
+export default function XMLStructurePanel({ onSelectStructure }: XMLStructurePanelProps) {
+  const [search, setSearch] = useState('');
+  const [allStructures, setAllStructures] = useState<Structure[]>([]);
+  const [filteredStructures, setFilteredStructures] = useState<Structure[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Structure | null>(null);
 
-  const filteredTree = filterTree(mockTree)
+  // Загружаем ВСЕ структуры один раз
+  useEffect(() => {
+    setLoading(true);
+    getStructures()
+      .then(data => {
+        console.log('Все структуры с бэка:', data);
+        setAllStructures(data || []);
+        setFilteredStructures(data || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setError('Не удалось загрузить структуры');
+        setLoading(false);
+      });
+  }, []);
 
-  const handleNodeClick = (node: TreeNode) => {
-    setSelectedNode({
-      attrs: { code: node.id, name: node.name },
-      docs: [`Document for ${node.name}`]
-    })
-  }
+  // Локальный фильтр по поиску
+  useEffect(() => {
+    if (!search.trim()) {
+      setFilteredStructures(allStructures);
+      return;
+    }
 
-  const renderTree = (nodes: TreeNode[], level = 0) => {
-    return (
-      <List dense disablePadding>
-        {nodes.map((node) => (
-          <div key={node.id}>
-            <ListItem disablePadding>
-              <ListItemButton
-                sx={{ pl: 2 + level * 2 }}
-                onClick={() => handleNodeClick(node)}
-                selected={selectedNode?.attrs.code === node.id}
-              >
-                <ListItemText primary={node.name} />
-              </ListItemButton>
-            </ListItem>
-            {node.children && renderTree(node.children, level + 1)}
-          </div>
-        ))}
-      </List>
-    )
-  }
+    const lowerSearch = search.toLowerCase();
+    const filtered = allStructures.filter(item =>
+      (item.name?.toLowerCase().includes(lowerSearch)) ||
+      (item.description?.toLowerCase().includes(lowerSearch)) ||
+      (item.id?.toString().includes(lowerSearch))
+    );
+    setFilteredStructures(filtered);
+  }, [search, allStructures]);
+
+  const handleSelect = (item: Structure) => {
+    setSelectedItem(item);
+    if (onSelectStructure) {
+      onSelectStructure(Number(item.id)); // ← передаём id наверх в App
+    }
+  };
+
+  if (loading) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 4 }} />;
 
   return (
-    <div style={{ padding: 16 }}> {/* просто div без Paper */}
-      <TextField
-        fullWidth
-        size="small"
-        placeholder="Search XML files"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 1 }}
-      />
-
-      <Typography variant="subtitle1" gutterBottom>
-        XML Structure
+    <div style={{ padding: 16 }}>
+      <Typography variant="h5" gutterBottom>
+        Структуры и поиск
       </Typography>
 
-      <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-        {renderTree(filteredTree)}
-      </div>
+      <TextField
+        fullWidth
+        label="Поиск по названию, описанию или ID"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        sx={{ mb: 3 }}
+      />
 
-      {selectedNode && (
-        <div style={{ padding: 8, marginTop: 16, backgroundColor: '#f5f7fa', borderRadius: 4 }}>
-          <Typography variant="subtitle2">Node Attributes</Typography>
-          <Typography variant="body2">Attributes:</Typography>
-          <pre>{JSON.stringify(selectedNode.attrs, null, 2)}</pre>
-          <Typography variant="body2">Linked Documents:</Typography>
-          <List dense>
-            {selectedNode.docs.map((doc) => (
-              <ListItem key={doc}>
-                <ListItemText primary={doc} />
-              </ListItem>
-            ))}
-          </List>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {filteredStructures.length === 0 ? (
+        <Typography color="text.secondary">
+          {search.trim() ? 'Ничего не найдено' : 'Структур пока нет. Загрузи XML.'}
+        </Typography>
+      ) : (
+        <List sx={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #ddd', borderRadius: 1 }}>
+          {filteredStructures.map((item) => (
+            <ListItemButton
+              key={item.id}
+              onClick={() => handleSelect(item)}
+              selected={selectedItem?.id === item.id}
+            >
+              <ListItemText
+                primary={item.name || 'Без названия'}
+                secondary={`ID: ${item.id} | Описание: ${item.description || 'нет'}`}
+              />
+            </ListItemButton>
+          ))}
+        </List>
+      )}
+
+      {selectedItem && (
+        <div style={{
+          marginTop: 24,
+          padding: 16,
+          backgroundColor: '#f8f9fa',
+          borderRadius: 8,
+          border: '1px solid #e0e0e0'
+        }}>
+          <Typography variant="h6" gutterBottom>
+            Выбранная структура
+          </Typography>
+          <pre style={{ fontSize: 13, background: '#fff', padding: 12, borderRadius: 4, overflowX: 'auto' }}>
+            {JSON.stringify(selectedItem, null, 2)}
+          </pre>
         </div>
       )}
     </div>
-  )
+  );
 }

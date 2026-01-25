@@ -160,6 +160,9 @@ def upload_structure_xml(request):
         except ET.ParseError as e:
             return JsonResponse({'error': f'Неверный формат XML: {str(e)}'}, status=400)
 
+        if root.tag == 'organization':
+            root = root.find('structure') or root
+
         with transaction.atomic():
             #надеюсь что это так
             struct_name = root.get('name') or uploaded_file.name.rsplit('.', 1)[0]
@@ -189,14 +192,13 @@ def upload_structure_xml(request):
             struct_elem = root.find('structure')
             if struct_elem is not None:
                 folder_elements.extend(struct_elem.findall('folder'))
-                folders_processed = 1
-            else:
-                # Обрабатываем найденные папки
-                for folder_elem in folder_elements:
-                    process_folder_hierarchy(folder_elem, structure, None, folder_cache)
 
-                # Считаем папки
-                folders_processed = Folder.objects.filter(structure=structure).count()
+            # Обрабатываем найденные папки
+            for folder_elem in folder_elements:
+                process_folder_hierarchy(folder_elem, structure, None, folder_cache)
+
+            # Считаем папки
+            folders_processed = Folder.objects.filter(structure=structure).count()
 
             # Сохраняем XML файл
             filename = f"{uuid.uuid4()}_{uploaded_file.name}"

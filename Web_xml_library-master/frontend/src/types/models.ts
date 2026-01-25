@@ -4,9 +4,14 @@ export interface Structure {
 }
 
 export interface TreeNode {
-  id: string
-  name: string
-  children?: TreeNode[]
+  id: string;
+  name: string;
+  code: string | null;
+  attributes?: Record<string, any>;
+  has_children?: boolean;
+  children?: TreeNode[];
+  docs?: string[];  // если добавишь позже
+  ref: any;
 }
 
 export interface NodeDetails {
@@ -15,7 +20,7 @@ export interface NodeDetails {
 }
 
 export interface Structure {
-  id: number
+  id: string
   name: string
   description: string
 }
