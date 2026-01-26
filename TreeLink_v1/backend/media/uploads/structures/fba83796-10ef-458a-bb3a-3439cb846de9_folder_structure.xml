@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<structure>
+  <folder name="Основная папка" code="001">
+    <folder name="Техническая документация" code="001.001">
+      <file name="ТЗ.pdf" code="001.001.001"/>
+      <file name="Схемы.pdf" code="001.001.002"/>
+    </folder>
+    <folder name="Договоры" code="001.002">
+      <file name="Договор №1.xml" code="001.002.001"/>
+      <file name="Договор №2.xml" code="001.002.002"/>
+    </folder>
+    <file name="Основной документ.xml" code="001.003"/>
+  </folder>
+</structure>

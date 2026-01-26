@@ -1,0 +1,8 @@
+<structure name="Проект">
+  <folder code="PRJ" name="Проект А" status="active" priority="high">
+    <folder code="PRJ-DEV" name="Разработка" team_size="8" deadline="2024-12-31">
+      <folder code="PRJ-DEV-FE" name="Фронтенд" technology="React"/>
+      <folder code="PRJ-DEV-BE" name="Бэкенд" technology="Django" database="PostgreSQL"/>
+    </folder>
+  </folder>
+</structure>

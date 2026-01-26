@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+    <header>
+        <doc_number>001</doc_number>
+        <title>Договор аренды</title>
+    </header>
+    <metadata>
+        <folder_code>FOLDER-001</folder_code>
+        <author>Иванов И.И.</author>
+        <date>2024-01-15</date>
+        <type>contract</type>
+        <custom_field>Значение</custom_field>
+    </metadata>
+    <content>
+        <!-- содержимое документа -->
+    </content>
+</document>

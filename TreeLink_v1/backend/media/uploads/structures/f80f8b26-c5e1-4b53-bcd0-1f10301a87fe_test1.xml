@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<organization>
+    <structure name="Отдел продаж" code="SALES">
+        <folder name="Договоры" code="CONTRACTS" type="основные" ответственный="Анна">
+            <folder name="2024" code="2024" статус="активный">
+                <folder name="Январь-март" code="Q1-2024" сумма="1 250 000" />
+                <folder name="Апрель-июнь" code="Q2-2024" сумма="980 000" />
+            </folder>
+            <folder name="2023" code="2023" статус="архив" />
+        </folder>
+
+        <folder name="Отчеты" code="REPORTS" периодичность="ежемесячный">
+            <folder name="Ежемесячные" code="MONTHLY">
+                <folder name="Январь 2025" code="JAN-2025" файл="report_jan.pdf" />
+            </folder>
+            <folder name="Годовые" code="ANNUAL" />
+        </folder>
+    </structure>
+</organization>
