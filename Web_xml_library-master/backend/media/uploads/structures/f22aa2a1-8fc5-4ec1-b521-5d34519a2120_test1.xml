@@ -1,7 +1,0 @@
-<organization>
-  <structure name="test1" code="TEST1">
-    <folder name="Корень" code="ROOT">
-      <folder name="Подпапка" code="SUB" />
-    </folder>
-  </structure>
-</organization>

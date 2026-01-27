@@ -15,24 +15,26 @@ from documents.models import Document, FolderDocument
 from import_logs.models import ImportLog
 
 
-def process_folder_hierarchy(folder_elem, structure, parent_folder, folder_cache=None):
+def process_folder_hierarchy(folder_elem, structure, parent_folder, folder_cache=None, errors=None):
     """Рекурсивная обработка папок с кэшированием"""
     if folder_cache is None:
         folder_cache = {}
+    if errors is None:
+        errors = []
 
     # Извлекаем данные из XML
     folder_name = folder_elem.get('name', '')
     folder_code = folder_elem.get('code', '')
 
-    # Если нет кода, генерируем его из имени
     if not folder_code:
-        folder_code = folder_name.lower().replace(' ', '_')
+        errors.append(f"Папка '{folder_name}' не имеет кода (атрибут 'code')")
+        return None, errors  # Пропускаем папку без кода
 
     # Генерируем ключ кэша
     cache_key = f"{structure.id}_{folder_code}_{parent_folder.id if parent_folder else 'root'}"
 
     if cache_key in folder_cache:
-        return folder_cache[cache_key]
+        return folder_cache[cache_key], errors
 
     # Создаем materialized_path
     if parent_folder:
@@ -102,17 +104,17 @@ def process_folder_hierarchy(folder_elem, structure, parent_folder, folder_cache
     # Кэшируем результат
     folder_cache[cache_key] = folder
 
-    # Рекурсивно обрабатываем детей
+    # Рекурсивно обрабатываем детей - ВАЖНО: передаем errors тоже!
     for child_elem in folder_elem.findall('folder'):
-        process_folder_hierarchy(child_elem, structure, folder, folder_cache)
+        process_folder_hierarchy(child_elem, structure, folder, folder_cache, errors)
 
     # Также обрабатываем вложенные папки, которые могут быть в других тегах
     for child_elem in folder_elem.findall('*'):
         if child_elem.tag != 'folder' and child_elem.find('folder') is not None:
             for nested_folder in child_elem.findall('folder'):
-                process_folder_hierarchy(nested_folder, structure, folder, folder_cache)
+                process_folder_hierarchy(nested_folder, structure, folder, folder_cache, errors)
 
-    return folder
+    return folder, errors
 
 
 @csrf_exempt
@@ -140,7 +142,6 @@ def upload_structure_xml(request):
                 'structure_id': existing_structure.id
             })
 
-
         try:
             xml_content = file_content.decode('utf-8')
         except UnicodeDecodeError:
@@ -164,7 +165,6 @@ def upload_structure_xml(request):
             root = root.find('structure') or root
 
         with transaction.atomic():
-            #надеюсь что это так
             struct_name = root.get('name') or uploaded_file.name.rsplit('.', 1)[0]
 
             # Создаем структуру
@@ -177,6 +177,7 @@ def upload_structure_xml(request):
             # Обрабатываем папки
             folders_processed = 0
             folder_cache = {}
+            errors = []  # Создаем список ошибок здесь
 
             folder_elements = []
 
@@ -195,7 +196,16 @@ def upload_structure_xml(request):
 
             # Обрабатываем найденные папки
             for folder_elem in folder_elements:
-                process_folder_hierarchy(folder_elem, structure, None, folder_cache)
+                folder, folder_errors = process_folder_hierarchy(folder_elem, structure, None, folder_cache, errors)
+                # Ошибки уже добавляются в список errors внутри функции
+
+            if errors:
+                # Откатываем транзакцию и возвращаем ошибки
+                transaction.set_rollback(True)
+                return JsonResponse({
+                    'error': 'Ошибки валидации папок',
+                    'errors': errors[:20]  # первые 20 ошибок
+                }, status=400)
 
             # Считаем папки
             folders_processed = Folder.objects.filter(structure=structure).count()
@@ -228,8 +238,6 @@ def upload_structure_xml(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': f'Ошибка обработки: {str(e)}'}, status=500)
-
-
 def get_structures(request):
     """Получить все структуры"""
     structures = Structure.objects.filter(is_active=True).order_by('-created_at').values(

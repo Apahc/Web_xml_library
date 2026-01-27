@@ -22,7 +22,7 @@ class Structure(models.Model):
 
 class Folder(models.Model):
     structure = models.ForeignKey(Structure, on_delete=models.CASCADE, related_name='folders', verbose_name="Структура")
-    code = models.CharField(max_length=255, blank=True, null=True, verbose_name="Код")
+    code = models.CharField(max_length=255, verbose_name="Код")
     name = models.CharField(max_length=255, verbose_name="Название")
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children',
                                verbose_name="Родитель")
@@ -36,6 +36,12 @@ class Folder(models.Model):
         indexes = [
             models.Index(fields=['materialized_path']),
             models.Index(fields=['structure', 'parent']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['structure', 'code'],
+                name='unique_folder_code_per_structure'
+            )
         ]
 
     def __str__(self):

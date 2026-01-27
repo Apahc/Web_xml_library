@@ -32,3 +32,18 @@ export interface Folder {
   parent_id: number | null
   materialized_path: string
 }
+
+
+
+// Добавляем тип для документа
+export interface Document {
+  id: number;
+  code: string;
+  name: string;
+  metadata: Record<string, any>;
+  file_path: string;
+  file_size: number;
+  file_hash: string;
+  created_at: string;
+  updated_at: string;
+}

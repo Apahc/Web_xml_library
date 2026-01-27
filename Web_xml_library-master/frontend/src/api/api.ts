@@ -1,3 +1,4 @@
+// api.ts
 import axios from 'axios'
 
 // не трогать
@@ -11,7 +12,7 @@ const api = axios.create({
   }
 })
 
-// API функции
+// API функции для структур
 
 // это работает - не трогаем
 export const uploadStructure = async (file: File, structureId?: number) => {
@@ -53,7 +54,6 @@ export const checkConsistency = async (structureId: number) => {
   }
 }
 
-// вот это не работает , хотя на бэке вроде норм прописан алгоритм
 export const getFolderTree = async (structureId: number) => {
   try {
     const response = await api.get(`/structures/${structureId}/folders/`);
@@ -76,17 +76,6 @@ export const testAPI = async () => {
   }
 }
 
-// это создано чтоб работало с xmlStructurePanel
-export const apiService = {
-  uploadStructure,
-  getStructures,
-  checkConsistency,
-  getFolderTree,
-  testAPI
-}
-
-export default api
-
 // после ввода названия документа страница падает 
 export const search_structure = async (query: string) => {
   try {
@@ -97,3 +86,70 @@ export const search_structure = async (query: string) => {
     return []; // если ошибка — возвращаем пустой массив, чтобы не падало
   }
 };
+
+// Функции для документов
+export const uploadDocument = async (file: File, structureId: number, force?: boolean) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('structure_id', structureId.toString())
+  
+  if (force) {
+    formData.append('force', 'true')
+  }
+
+  const response = await api.post('/documents/upload-single/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  })
+
+  return response.data
+}
+
+export const getDocumentFolders = async (documentId: number) => {
+  try {
+    const response = await api.get(`/documents/${documentId}/folders/`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching document folders:', error)
+    return { folders: [] }
+  }
+}
+
+export const getDocumentsByFolder = async (folderId: number) => {
+  try {
+    const response = await api.get(`/documents/folder/${folderId}/`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching documents by folder:', error)
+    return { documents: [] }
+  }
+}
+
+export const handleDuplicateDecision = async (data: {
+  decision: 'rename' | 'overwrite' | 'skip'
+  proposed_code?: string
+  original_data: any
+}) => {
+  const response = await api.post('/documents/handle-duplicate/', data)
+  return response.data
+}
+
+// Единый объект apiService со всеми функциями
+export const apiService = {
+  // Функции для структур
+  uploadStructure,
+  getStructures,
+  checkConsistency,
+  getFolderTree,
+  testAPI,
+  search_structure,
+  
+  // Функции для документов
+  uploadDocument,
+  getDocumentFolders,
+  getDocumentsByFolder,
+  handleDuplicateDecision
+}
+
+export default api
