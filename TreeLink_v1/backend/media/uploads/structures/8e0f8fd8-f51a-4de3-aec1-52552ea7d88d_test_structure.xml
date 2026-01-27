@@ -1,9 +1,0 @@
-<organization>
-    <structure name="Отдел продаж" code="SALES">
-        <folder name="Договоры" code="CONTRACTS">
-            <folder name="2024" code="2024"/>
-            <folder name="2023" code="2023"/>
-        </folder>
-        <folder name="Отчеты" code="REPORTS"/>
-    </structure>
-</organization>
