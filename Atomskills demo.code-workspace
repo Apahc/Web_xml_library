@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "Atomskills demo",
+			"path": "."
+		},
+		{
+			"name": "TreeLink",
+			"path": "../Atomskills5/TreeLink"
+		}
+	],
+	"settings": {}
+}
